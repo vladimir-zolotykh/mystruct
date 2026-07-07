@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# PYTHON_ARGCOMPLETE_OK
+from typing import ClassVar
+import struct
+
+
+class Field:
+    def __init__(self, name: str, offset: int):
+        self._name = name
+        self.offset = offset
+
+    def get_field(self, instance):
+        raise NotImplementedError(f"{type(self)} must implement get_field")
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return self.get_field(instance)
+
+
+class FieldStr(Field):
+    def __init__(self, name: str, fmt: str, offset: int):
+        super().__init__(name, offset)
+        self.fmt = fmt
+
+    def get_field(self, instance):
+        sl = slice(self.offset, self.offset + struct.calcsize(self.fmt))
+        t = struct.unpack_from(self.fmt, instance.view[sl])
+        return t[0] if len(t) == 1 else t
+
+
+class FieldType(Field):
+    def __init__(self, name: str, factory: "FieldMeta", offset: int):
+        super().__init__(name, offset)
+        self.factory = factory
+
+    def get_field(self, instance):
+        sl = slice(self.offset, self.offset + self.factory._view_size)
+        return self.factory(instance[sl])
+
+
+class FieldMeta(type):
+    def __new__(mcls, clsname, bases, clsdict):
+        off: int = 0
+        fields = []
+        for name, val in clsdict.items():
+            if name[:2] == "__" and name[-2:] == "__":
+                continue
+            if isinstance(val, str):
+                clsdict[name] = FieldStr(name, val, off)
+                off += struct.calcsize(val)
+            elif isinstance(val, FieldMeta):
+                clsdict[name] = FieldType(name, val, off)
+                off += val._view_size
+            fields.append[name]
+        clsdict["_view_size"] = off
+        clsdict["_fields"] = fields
+        return super().__new__(mcls, clsdict, bases, clsdict)
+
+
+class View:
+    _view_size: ClassVar[int]
+
+    def __init__(self, bytesdata: bytes | memoryview):
+        self.view = memoryview(bytesdata)
+
+
+class Header(View, metaclass=FieldMeta):
+    _fields: ClassVar[list[str]]
+
+    magic = "<i"
+    x1 = "<d"
+    y1 = "<d"
+    x2 = "<d"
+    y2 = "<d"
+    polylen = "<i"
+
+
+if __name__ == "__main__":
+    with open("polygons.dat", "rb") as f:
+        h = Header(f.read(Header._view_size))
+        print(h)
