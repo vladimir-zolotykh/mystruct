@@ -37,7 +37,7 @@ class FieldType(Field):
 
     def get_field(self, instance):
         sl = slice(self.offset, self.offset + self.factory._view_size)
-        return self.factory(instance[sl])
+        return self.factory(instance.view[sl])
 
 
 class FieldMeta(type):
@@ -53,10 +53,10 @@ class FieldMeta(type):
             elif isinstance(val, FieldMeta):
                 clsdict[name] = FieldType(name, val, off)
                 off += val._view_size
-            fields.append[name]
+            fields.append(name)
         clsdict["_view_size"] = off
         clsdict["_fields"] = fields
-        return super().__new__(mcls, clsdict, bases, clsdict)
+        return super().__new__(mcls, clsname, bases, clsdict)
 
 
 class View(metaclass=FieldMeta):
@@ -65,6 +65,9 @@ class View(metaclass=FieldMeta):
 
     def __init__(self, bytesdata: bytes | memoryview):
         self.view = memoryview(bytesdata)
+
+    def as_csv(self):
+        return ", ".join(f"{n}={getattr(self, n)!r}" for n in self._fields)
 
 
 class Point(View):
@@ -86,4 +89,4 @@ class Header(View):
 if __name__ == "__main__":
     with open("polygons.dat", "rb") as f:
         h = Header(f.read(Header._view_size))
-        print(h)
+    print(h.as_csv())
