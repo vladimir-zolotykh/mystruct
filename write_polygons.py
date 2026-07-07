@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-from functools import chain
-from dataclasses import dataclass
+from itertools import chain
+from dataclasses import dataclass, field
 import struct
 
 POLYGONS = [
@@ -20,8 +20,8 @@ class Point:
 
 @dataclass
 class Bbox:
-    p1: Point = Point()
-    p2: Point = Point()
+    p1: Point = field(default_factory=Point)
+    p2: Point = field(default_factory=Point)
 
 
 def get_bbox(poly=POLYGONS) -> Bbox:
@@ -38,7 +38,7 @@ def get_bbox(poly=POLYGONS) -> Bbox:
 class Header:
     magic: int
     x1: float
-    y2: float
+    y1: float
     x2: float
     y2: float
     len: int
@@ -63,3 +63,7 @@ def write_polygons() -> None:
     h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.x, bb.p2.y, len(POLYGONS))
     with open("polygons.dat", "wb") as f:
         h.write(f)
+
+
+if __name__ == "__main__":
+    write_polygons()
