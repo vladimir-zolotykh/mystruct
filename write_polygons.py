@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
+import os
+from typing import Self
 from collections.abc import Iterable
 from itertools import chain
 from dataclasses import dataclass, field, fields
@@ -57,10 +59,9 @@ class Header(StarIter):
     def write(self, f) -> None:
         f.write(struct.pack("<iddddi", *self))
 
-    def read(self, f) -> None:
-        self.magic, self.x1, self.y1, self.x2, self.y2, self.len = f.read(
-            struct.calcsize("<iddddi")
-        )
+    @classmethod
+    def from_file(cls, f) -> Self:
+        return cls(*struct.unpack("<iddddi", f.read(struct.calcsize("<iddddi"))))
 
 
 def write_polygons() -> None:
@@ -68,7 +69,24 @@ def write_polygons() -> None:
     h = Header(0x1234, *bb, len(POLYGONS))
     with open("polygons.dat", "wb") as f:
         h.write(f)
+        for polygon in POLYGONS:
+            sz = struct.calcsize("<dd") * len(polygon)
+            f.write(struct.pack("<i", struct.calcsize("<i") + sz))
+            for p in polygon:
+                f.write(struct.pack("<dd", *p))
 
 
 if __name__ == "__main__":
-    write_polygons()
+    if not os.path.exists("polygons.dat"):
+        write_polygons()
+    with open("polygons.dat", "rb") as f:
+        h = Header.from_file(f)
+        polygons = []
+        for _ in range(h.len):
+            fmt_i = struct.Struct("<i")
+            sz = struct.unpack("<i", f.read(struct.calcsize("<i")))[0]
+            polygon = []
+            for _ in range(sz // struct.calcsize("<dd")):
+                polygon.append(struct.unpack("<dd", f.read(struct.calcsize("<dd"))))
+            polygons.append(polygon)
+        print(polygons)
