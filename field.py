@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-from typing import ClassVar
+from typing import ClassVar, Iterator
 import struct
 
 
@@ -86,7 +86,41 @@ class Header(View):
     len = "<i"
 
 
+class Polygon(View):
+    def from_file(cls, f):
+        sz = f.read(struct.unpack_from("<i", f.read(struct.calcsize("<i"))))[0]
+        return Polygon(cls, f.read(sz))
+
+
+class PolygonStr(Polygon):
+    def __init__(self, bytesdata, fmt: str):
+        super().__init__(bytesdata)
+        self.fmt = fmt
+
+    def __iter__(self) -> Iterator[tuple[float, float]]:
+        sz = struct.calcsize(self.fmt)
+        for off in range(0, len(self.view), sz):
+            sl = slice[off, off + sz]
+            yield struct.unpack_from(self.fmt, self.view[sl])
+
+
+class PolygonType(Polygon):
+    def __init__(self, bytesdata, factory: FieldMeta):
+        super().__init__(bytesdata)
+        self.factory = factory
+
+    def __iter__(self) -> Iterator[Polygon]:
+        sz = self.factory._view_size
+        for off in range(0, len(self.view), sz):
+            sl = slice[off, off + sz]
+            yield self.factory(self.view[sl])
+
+
 if __name__ == "__main__":
     with open("polygons.dat", "rb") as f:
         h = Header(f.read(Header._view_size))
     print(h.as_csv())
+    for _ in range(h.len):
+        polygon = PolygonStr.from_file(f, "<dd")
+        for p in polygon:
+            print(p)
