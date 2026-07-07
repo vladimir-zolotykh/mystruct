@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
+from collections.abc import Iterable
 from itertools import chain
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 import struct
 
 POLYGONS = [
@@ -13,13 +14,23 @@ POLYGONS = [
 
 
 @dataclass
-class Point:
+class StarIter:
+    def __iter__(self):
+        for s in fields(self):
+            if isinstance((a := getattr(self, s.name)), Iterable):
+                yield from a
+            else:
+                yield a
+
+
+@dataclass
+class Point(StarIter):
     x: float = 0.0
     y: float = 0.0
 
 
 @dataclass
-class Bbox:
+class Bbox(StarIter):
     p1: Point = field(default_factory=Point)
     p2: Point = field(default_factory=Point)
 
@@ -35,7 +46,7 @@ def get_bbox(poly=POLYGONS) -> Bbox:
 
 
 @dataclass
-class Header:
+class Header(StarIter):
     magic: int
     x1: float
     y1: float
@@ -44,12 +55,7 @@ class Header:
     len: int
 
     def write(self, f) -> None:
-        f.write(
-            # struct.pack("", self.__dict__.values())
-            struct.pack(
-                "<iddddi", self.magic, self.x1, self.y1, self.x2, self.y2, self.len
-            )
-        )
+        f.write(struct.pack("<iddddi", *self))
 
     def read(self, f) -> None:
         self.magic, self.x1, self.y1, self.x2, self.y2, self.len = f.read(
@@ -59,8 +65,7 @@ class Header:
 
 def write_polygons() -> None:
     bb = get_bbox()
-    # h = Header(0x1234, *bb, len(POLYGONS))
-    h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.x, bb.p2.y, len(POLYGONS))
+    h = Header(0x1234, *bb, len(POLYGONS))
     with open("polygons.dat", "wb") as f:
         h.write(f)
 
