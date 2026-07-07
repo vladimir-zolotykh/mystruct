@@ -80,7 +80,7 @@ class Bbox(View):
 class Header(View):
     magic = "<i"
     bbox = Bbox
-    polylen = "<i"
+    len = "<i"
 
 
 if __name__ == "__main__":
