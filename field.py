@@ -59,21 +59,27 @@ class FieldMeta(type):
         return super().__new__(mcls, clsdict, bases, clsdict)
 
 
-class View:
+class View(metaclass=FieldMeta):
+    _fields: ClassVar[list[str]]
     _view_size: ClassVar[int]
 
     def __init__(self, bytesdata: bytes | memoryview):
         self.view = memoryview(bytesdata)
 
 
-class Header(View, metaclass=FieldMeta):
-    _fields: ClassVar[list[str]]
+class Point(View):
+    x = "<d"
+    y = "<d"
 
+
+class Bbox(View):
+    x1y1 = Point
+    x2y2 = Point
+
+
+class Header(View):
     magic = "<i"
-    x1 = "<d"
-    y1 = "<d"
-    x2 = "<d"
-    y2 = "<d"
+    bbox = Bbox
     polylen = "<i"
 
 
