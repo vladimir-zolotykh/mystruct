@@ -74,6 +74,9 @@ class Point(View):
     x = "<d"
     y = "<d"
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.x}, {self.y})"
+
 
 class Bbox(View):
     x1y1 = Point
@@ -94,11 +97,17 @@ class Polygon(View):
         (sz,) = cls._INT.unpack_from(f.read(cls._INT.size))
         return cls(f.read(sz - cls._INT.size))
 
-    def iter_as(self, fmt: str) -> Iterator[tuple[float, float]]:
+    def iter_as_fmt(self, fmt: str) -> Iterator[tuple[float, float]]:
         sz = struct.calcsize(fmt)
         for off in range(0, len(self.view), sz):
             sl = slice(off, off + sz)
             yield struct.unpack_from(fmt, self.view[sl])
+
+    def iter_as_type(self, _type: FieldMeta) -> Iterator[FieldMeta]:
+        sz = _type._view_size
+        for off in range(0, len(self.view), sz):
+            sl = slice(off, off + sz)
+            yield _type(self.view[sl])
 
 
 if __name__ == "__main__":
@@ -108,5 +117,7 @@ if __name__ == "__main__":
         _DD = struct.Struct("<dd")
         for _ in range(h.len):
             polygon = Polygon.from_file(f)
-            for p in polygon.iter_as(_DD.format):
+            # for p in polygon.iter_as_fmt(_DD.format):
+            #     print(p)
+            for p in polygon.iter_as_type(Point):
                 print(p)
