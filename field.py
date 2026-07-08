@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 from typing import ClassVar, Iterator
+import io
+from functools import singledispatchmethod
 import struct
 
 
@@ -95,13 +97,19 @@ class Polygon(View):
         (sz,) = cls._INT.unpack_from(f.read(cls._INT.size))
         return cls(f.read(sz - cls._INT.size))
 
-    def iter_as_fmt(self, fmt: str) -> Iterator[tuple[float, float]]:
+    @singledispatchmethod
+    def iter_as(self, fmt_or_type):
+        raise NotImplementedError("Must implement iter_as")
+
+    @iter_as.register
+    def _(self, fmt: str) -> Iterator[tuple[float, float]]:
         sz = struct.calcsize(fmt)
         for off in range(0, len(self.view), sz):
             sl = slice(off, off + sz)
             yield struct.unpack_from(fmt, self.view[sl])
 
-    def iter_as_type(self, _type: FieldMeta) -> Iterator[FieldMeta]:
+    @iter_as.register
+    def _(self, _type: FieldMeta) -> Iterator[FieldMeta]:
         sz = _type._view_size
         for off in range(0, len(self.view), sz):
             sl = slice(off, off + sz)
@@ -113,9 +121,15 @@ if __name__ == "__main__":
         h = Header(f.read(Header._view_size))
         print(h)
         _DD = struct.Struct("<dd")
+        data: bytes = f.read()
+        f1: io.BytesIO = io.BytesIO(data)
+        f2: io.BytesIO = io.BytesIO(data)
+
         for _ in range(h.len):
-            polygon = Polygon.from_file(f)
-            # for p in polygon.iter_as_fmt(_DD.format):
-            #     print(p)
-            for p in polygon.iter_as_type(Point):
+            polygon = Polygon.from_file(f1)
+            for p in polygon.iter_as(_DD.format):
+                print(p)
+        for _ in range(h.len):
+            polygon = Polygon.from_file(f2)
+            for p in polygon.iter_as(Point):
                 print(p)
