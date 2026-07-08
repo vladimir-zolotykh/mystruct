@@ -75,7 +75,8 @@ class Point(View):
     y = "<d"
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.x}, {self.y})"
+        args = ", ".join(f"{getattr(self, n)!r}" for n in self._fields)
+        return f"{type(self).__name__}({args})"
 
 
 class Bbox(View):
