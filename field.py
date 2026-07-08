@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-from typing import ClassVar, Iterator
+from typing import ClassVar, Iterator, cast, TYPE_CHECKING
 import io
 from functools import singledispatchmethod
 import struct
@@ -43,6 +43,8 @@ class FieldType(Field):
 
 
 class FieldMeta(type):
+    _view_size: ClassVar[int]
+
     def __new__(mcls, clsname, bases, clsdict):
         off: int = 0
         fields = []
@@ -84,9 +86,14 @@ class Bbox(View):
 
 
 class Header(View):
-    magic = "<i"
-    bbox = Bbox
-    len = "<i"
+    if TYPE_CHECKING:
+        magic: int
+        bbox: Bbox
+        len: int
+    else:
+        magic = "<i"
+        bbox = Bbox
+        len = "<i"
 
 
 class Polygon(View):
