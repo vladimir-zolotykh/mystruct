@@ -66,34 +66,25 @@ class View(metaclass=FieldMeta):
     def __init__(self, bytesdata: bytes | memoryview):
         self.view = memoryview(bytesdata)
 
-    # def as_csv(self):
-    #     return ", ".join(f"{n}={getattr(self, n)!r}" for n in self._fields)
+    def __repr__(self) -> str:
+        args = ", ".join(f"{getattr(self, n)!r}" for n in self._fields)
+        return f"{type(self).__name__}({args})"
 
 
 class Point(View):
     x = "<d"
     y = "<d"
 
-    def __repr__(self) -> str:
-        args = ", ".join(f"{getattr(self, n)!r}" for n in self._fields)
-        return f"{type(self).__name__}({args})"
-
 
 class Bbox(View):
     xy1 = Point
     xy2 = Point
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.xy1}, {self.xy2})"
 
 
 class Header(View):
     magic = "<i"
     bbox = Bbox
     len = "<i"
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.magic}, {self.bbox}, {self.len})"
 
 
 class Polygon(View):
@@ -120,7 +111,6 @@ class Polygon(View):
 if __name__ == "__main__":
     with open("polygons.dat", "rb") as f:
         h = Header(f.read(Header._view_size))
-        # print(h.as_csv())
         print(h)
         _DD = struct.Struct("<dd")
         for _ in range(h.len):
