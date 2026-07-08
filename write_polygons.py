@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 import os
-from typing import Self
+from typing import Self, BinaryIO, TYPE_CHECKING
 from collections.abc import Iterable
 from itertools import chain
 from dataclasses import dataclass, field, fields
 import struct
 
-POLYGONS = [
+PointType = tuple[float, float]
+PolygonType = list[PointType]
+PolygonsType = list[PolygonType]
+POLYGONS: PolygonsType = [
     [(1.0, 2.5), (3.5, 4.0), (2.5, 1.5)],
     [(7.0, 1.2), (5.1, 3.0), (0.5, 7.5), (0.8, 9.0)],
     [(3.4, 6.3), (1.2, 0.5), (4.6, 9.2)],
@@ -37,7 +40,7 @@ class Bbox(StarIter):
     p2: Point = field(default_factory=Point)
 
 
-def get_bbox(poly=POLYGONS) -> Bbox:
+def get_bbox(poly: PolygonsType = POLYGONS) -> Bbox:
     p1 = Point()
     p1.x = min(x for x, _ in chain(*poly))
     p1.y = min(y for _, y in chain(*poly))
@@ -56,17 +59,20 @@ class Header(StarIter):
     y2: float
     len: int
 
-    def write(self, f) -> None:
+    def write(self, f: BinaryIO) -> None:
         f.write(struct.pack("<iddddi", *self))
 
     @classmethod
-    def from_file(cls, f) -> Self:
+    def from_file(cls, f: BinaryIO) -> Self:
         return cls(*struct.unpack("<iddddi", f.read(struct.calcsize("<iddddi"))))
 
 
 def write_polygons() -> None:
     bb = get_bbox()
-    h = Header(0x1234, *bb, len(POLYGONS))
+    if TYPE_CHECKING:
+        h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.y, bb.p2.y, len(POLYGONS))
+    else:
+        h = Header(0x1234, *bb, len(POLYGONS))
     with open("polygons.dat", "wb") as f:
         h.write(f)
         for polygon in POLYGONS:
