@@ -88,13 +88,11 @@ class Header(View):
 
 class Polygon(View):
     _INT = struct.Struct("<i")
-    _DD = struct.Struct("<dd")
 
     @classmethod
     def from_file(cls, f):
-        # (sz,) = struct.unpack_from("<i", f.read(struct.calcsize("<i")))
         (sz,) = cls._INT.unpack_from(f.read(cls._INT.size))
-        return cls(f.read(sz - struct.calcsize("<i")))
+        return cls(f.read(sz - cls._INT.size))
 
     def iter_as(self, fmt: str) -> Iterator[tuple[float, float]]:
         sz = struct.calcsize(fmt)
@@ -107,7 +105,8 @@ if __name__ == "__main__":
     with open("polygons.dat", "rb") as f:
         h = Header(f.read(Header._view_size))
         print(h.as_csv())
+        _DD = struct.Struct("<dd")
         for _ in range(h.len):
             polygon = Polygon.from_file(f)
-            for p in polygon.iter_as("<dd"):
+            for p in polygon.iter_as(_DD.format):
                 print(p)
