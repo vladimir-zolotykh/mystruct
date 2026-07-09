@@ -71,6 +71,7 @@ class Header(StarIter):
 
     def __post_init__(self):
         bb = get_bbox()
+        # how do I ensure that [1:5] matches x1-y2?
         self[1:5] = bb
         self.len = len(POLYGONS)
 
