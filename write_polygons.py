@@ -62,12 +62,16 @@ class Header(StarIter):
     y2: float = 0.0
     len: int = 0
 
+    def __setitem__(self, key, val):
+        if isinstance(key, slice):
+            for a, b in zip(fields(self)[key], val):
+                setattr(self, a.name, b)
+        else:
+            setattr(self, key, val)
+
     def __post_init__(self):
         bb = get_bbox()
-        self.x1 = bb.p1.x
-        self.y1 = bb.p1.y
-        self.x2 = bb.p2.x
-        self.y2 = bb.p2.y
+        self[1:5] = bb
         self.len = len(POLYGONS)
 
     def write(self, f: BinaryIO) -> None:
