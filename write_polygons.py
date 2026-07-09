@@ -102,8 +102,8 @@ if __name__ == "__main__":
         _DD = struct.Struct("<dd")
         for _ in range(h.len):
             (sz,) = _INT.unpack(f.read(_INT.size))
-            polygon: PolygonType = []
-            for _ in range(sz // _DD.size):
-                polygon.append(_DD.unpack(f.read(_DD.size)))
+            polygon: PolygonType = [
+                _DD.unpack(f.read(_DD.size)) for _ in range(sz // _DD.size)
+            ]
             polygons.append(polygon)
         assert POLYGONS == polygons
