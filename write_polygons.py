@@ -85,7 +85,7 @@ class Header(StarIter):
 def write_polygons() -> None:
     bb = get_bbox()
     if TYPE_CHECKING:
-        h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.y, bb.p2.y, len(POLYGONS))
+        h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.x, bb.p2.y, len(POLYGONS))
     else:
         h = Header()
     with open("polygons.dat", "wb") as f:
