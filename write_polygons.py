@@ -69,11 +69,11 @@ class Header(StarIter):
         self.len = len(POLYGONS)
 
     def write(self, f: BinaryIO) -> None:
-        f.write(struct.pack("<iddddi", *self))
+        f.write(self._I4DI.pack(*self))
 
     @classmethod
     def from_file(cls, f: BinaryIO) -> Self:
-        return cls(*struct.unpack("<iddddi", f.read(struct.calcsize("<iddddi"))))
+        return cls(*cls._I4DI.unpack(f.read(cls._I4DI.size)))
 
 
 def write_polygons() -> None:
