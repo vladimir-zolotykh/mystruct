@@ -84,11 +84,13 @@ def write_polygons() -> None:
         h = Header()
     with open("polygons.dat", "wb") as f:
         h.write(f)
+        _INT = struct.Struct("<i")
+        _DD = struct.Struct("<dd")
         for polygon in POLYGONS:
-            sz = struct.calcsize("<dd") * len(polygon)
-            f.write(struct.pack("<i", struct.calcsize("<i") + sz))
+            sz = _DD.size * len(polygon)
+            f.write(_INT.pack(_INT.size + sz))
             for p in polygon:
-                f.write(struct.pack("<dd", *p))
+                f.write(_DD.pack(*p))
 
 
 if __name__ == "__main__":
