@@ -93,19 +93,24 @@ def write_polygons() -> None:
                 f.write(_DD.pack(*p))
 
 
+def read_polygons(f: BinaryIO) -> tuple[Header, PolygonsType]:
+    _INT = struct.Struct("<i")
+    _DD = struct.Struct("<dd")
+    h = Header.from_file(f)
+    polygons: PolygonsType = []
+    for _ in range(h.len):
+        (sz,) = _INT.unpack(f.read(_INT.size))
+        polygon: PolygonType = [
+            _DD.unpack(f.read(_DD.size)) for _ in range(sz // _DD.size)
+        ]
+        polygons.append(polygon)
+    return h, polygons
+
+
 if __name__ == "__main__":
     if not os.path.exists("polygons.dat"):
         write_polygons()
     with open("polygons.dat", "rb") as f:
-        h = Header.from_file(f)
+        h, polygons = read_polygons(f)
         assert h == Header()
-        polygons: PolygonsType = []
-        _INT = struct.Struct("<i")
-        _DD = struct.Struct("<dd")
-        for _ in range(h.len):
-            (sz,) = _INT.unpack(f.read(_INT.size))
-            polygon: PolygonType = [
-                _DD.unpack(f.read(_DD.size)) for _ in range(sz // _DD.size)
-            ]
-            polygons.append(polygon)
         assert POLYGONS == polygons
