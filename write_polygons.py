@@ -16,6 +16,9 @@ POLYGONS: PolygonsType = [
     [(7.0, 1.2), (5.1, 3.0), (0.5, 7.5), (0.8, 9.0)],
     [(3.4, 6.3), (1.2, 0.5), (4.6, 9.2)],
 ]
+_I4DI = struct.Struct("<iddddi")
+_INT = struct.Struct("<i")
+_DD = struct.Struct("<dd")
 
 
 @dataclass
@@ -52,7 +55,6 @@ def get_bbox(poly: PolygonsType = POLYGONS) -> Bbox:
 
 @dataclass
 class Header(StarIter):
-    _I4DI = struct.Struct("<iddddi")
     magic: int = 0x1234
     x1: float = 0.0
     y1: float = 0.0
@@ -69,11 +71,11 @@ class Header(StarIter):
         self.len = len(POLYGONS)
 
     def write(self, f: BinaryIO) -> None:
-        f.write(self._I4DI.pack(*self))
+        f.write(_I4DI.pack(*self))
 
     @classmethod
     def from_file(cls, f: BinaryIO) -> Self:
-        return cls(*cls._I4DI.unpack(f.read(cls._I4DI.size)))
+        return cls(*_I4DI.unpack(f.read(_I4DI.size)))
 
 
 def write_polygons() -> None:
@@ -84,8 +86,6 @@ def write_polygons() -> None:
         h = Header()
     with open("polygons.dat", "wb") as f:
         h.write(f)
-        _INT = struct.Struct("<i")
-        _DD = struct.Struct("<dd")
         for polygon in POLYGONS:
             sz = _DD.size * len(polygon)
             f.write(_INT.pack(_INT.size + sz))
@@ -94,8 +94,6 @@ def write_polygons() -> None:
 
 
 def read_polygons(f: BinaryIO) -> tuple[Header, PolygonsType]:
-    _INT = struct.Struct("<i")
-    _DD = struct.Struct("<dd")
     h = Header.from_file(f)
     polygons: PolygonsType = []
     for _ in range(h.len):
