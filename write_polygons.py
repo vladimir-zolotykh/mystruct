@@ -81,7 +81,6 @@ def write_polygons() -> None:
     if TYPE_CHECKING:
         h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.y, bb.p2.y, len(POLYGONS))
     else:
-        # h = Header(0x1234, *bb, len(POLYGONS))
         h = Header()
     with open("polygons.dat", "wb") as f:
         h.write(f)
@@ -98,13 +97,13 @@ if __name__ == "__main__":
     with open("polygons.dat", "rb") as f:
         h = Header.from_file(f)
         assert h == Header()
-        polygons = []
+        polygons: PolygonsType = []
+        _INT = struct.Struct("<i")
+        _DD = struct.Struct("<dd")
         for _ in range(h.len):
-            fmt_i = struct.Struct("<i")
-            sz = struct.unpack("<i", f.read(struct.calcsize("<i")))[0]
-            polygon = []
-            for _ in range(sz // struct.calcsize("<dd")):
-                polygon.append(struct.unpack("<dd", f.read(struct.calcsize("<dd"))))
+            (sz,) = _INT.unpack(f.read(_INT.size))
+            polygon: PolygonType = []
+            for _ in range(sz // _DD.size):
+                polygon.append(_DD.unpack(f.read(_DD.size)))
             polygons.append(polygon)
         assert POLYGONS == polygons
-        # print(polygons)
