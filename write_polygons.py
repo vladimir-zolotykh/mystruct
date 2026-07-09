@@ -52,12 +52,21 @@ def get_bbox(poly: PolygonsType = POLYGONS) -> Bbox:
 
 @dataclass
 class Header(StarIter):
-    magic: int
-    x1: float
-    y1: float
-    x2: float
-    y2: float
-    len: int
+    _I4DI = struct.Struct("<iddddi")
+    magic: int = 0x1234
+    x1: float = 0.0
+    y1: float = 0.0
+    x2: float = 0.0
+    y2: float = 0.0
+    len: int = 0
+
+    def __post_init__(self):
+        bb = get_bbox()
+        self.x1 = bb.p1.x
+        self.y1 = bb.p1.y
+        self.x2 = bb.p2.x
+        self.y2 = bb.p2.y
+        self.len = len(POLYGONS)
 
     def write(self, f: BinaryIO) -> None:
         f.write(struct.pack("<iddddi", *self))
@@ -72,7 +81,8 @@ def write_polygons() -> None:
     if TYPE_CHECKING:
         h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.y, bb.p2.y, len(POLYGONS))
     else:
-        h = Header(0x1234, *bb, len(POLYGONS))
+        # h = Header(0x1234, *bb, len(POLYGONS))
+        h = Header()
     with open("polygons.dat", "wb") as f:
         h.write(f)
         for polygon in POLYGONS:
@@ -87,6 +97,7 @@ if __name__ == "__main__":
         write_polygons()
     with open("polygons.dat", "rb") as f:
         h = Header.from_file(f)
+        assert h == Header()
         polygons = []
         for _ in range(h.len):
             fmt_i = struct.Struct("<i")
@@ -95,4 +106,5 @@ if __name__ == "__main__":
             for _ in range(sz // struct.calcsize("<dd")):
                 polygon.append(struct.unpack("<dd", f.read(struct.calcsize("<dd"))))
             polygons.append(polygon)
-        print(polygons)
+        assert POLYGONS == polygons
+        # print(polygons)
