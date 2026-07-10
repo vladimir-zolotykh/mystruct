@@ -3,7 +3,7 @@
 # PYTHON_ARGCOMPLETE_OK
 import os
 from typing import Iterable, BinaryIO, Self, TYPE_CHECKING
-from functools import chain
+from itertools import chain
 import struct
 
 PointType = tuple[float, float]
@@ -30,10 +30,22 @@ class StarIter:
 
 class SchemaInit:
     def __init__(self, *args):
+        t = list(args)
         for a in self.__schema__:
-            setattr(self, a, args.pop())
-        if args:
+            setattr(self, a, t.pop(0))
+        if t:
             raise TypeError(f"{args}: extra args")
+
+    def __repr__(self):
+        args = ", ".join(f"{getattr(self, a)}" for a in self.__schema__)
+        return f"{type(self).__name__}({args})"
+
+    def __eq__(self, other) -> bool:
+        return (
+            all((left == right) for left, right in zip(self, other))
+            if isinstance(other, type(self))
+            else False
+        )
 
 
 class Point(SchemaInit, StarIter):
@@ -59,7 +71,11 @@ class Header(SchemaInit, StarIter):
 
     @classmethod
     def from_file(cls, f: BinaryIO) -> Self:
-        return cls.from_iterable(*_I4DI.unpack(f.read(_I4DI.size)))
+        return cls(*_I4DI.unpack(f.read(_I4DI.size)))
+
+    @classmethod
+    def from_default(cls) -> Self:
+        return cls(0x1234, 0.5, 0.5, 7.0, 9.2, 3)
 
     def write(self, f: BinaryIO) -> None:
         f.write(_I4DI.pack(*self))
@@ -83,7 +99,7 @@ def write_polygons() -> None:
 def read_polygons(f: BinaryIO) -> tuple[Header, PolygonsType]:
     h = Header.from_file(f)
     polygons: PolygonsType = []
-    for _ in range(h.len):
+    for _ in range(h.count):
         (sz,) = _INT.unpack(f.read(_INT.size))
         polygon: PolygonType = [
             _DD.unpack(f.read(_DD.size)) for _ in range(sz // _DD.size)
@@ -97,5 +113,5 @@ if __name__ == "__main__":
     #     write_polygons()
     with open("polygons.dat", "rb") as f:
         h, polygons = read_polygons(f)
-        assert h == Header()
+        assert h == Header.from_default()
         assert POLYGONS == polygons
