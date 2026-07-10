@@ -29,15 +29,6 @@ _DD = struct.Struct("<dd")
 HEADER_REF = (0x1234, 0.5, 0.5, 7.0, 9.2, 3)
 
 
-# class StarIter:
-#     def __iter__(self) -> Iterator[Any]:
-#         for k, v in self.__dict__.items():
-#             if isinstance(v, Iterable):
-#                 yield from v
-#             else:
-#                 yield v
-
-
 class SchemaInit:
     __schema__: ClassVar[tuple[str, ...]]
 
