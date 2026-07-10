@@ -17,6 +17,7 @@ POLYGONS: PolygonsType = [
 _I4DI = struct.Struct("<iddddi")
 _INT = struct.Struct("<i")
 _DD = struct.Struct("<dd")
+HEADER_REF = (0x1234, 0.5, 0.5, 7.0, 9.2, 3)
 
 
 class StarIter:
@@ -69,10 +70,6 @@ class Header(SchemaInit, StarIter):
     def from_file(cls, f: BinaryIO) -> Self:
         return cls(*_I4DI.unpack(f.read(_I4DI.size)))
 
-    @classmethod
-    def expected(cls) -> Self:
-        return cls(0x1234, 0.5, 0.5, 7.0, 9.2, 3)
-
     def write(self, f: BinaryIO) -> None:
         f.write(_I4DI.pack(*self))
 
@@ -82,7 +79,7 @@ def write_polygons() -> None:
     if TYPE_CHECKING:
         h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.x, bb.p2.y, len(POLYGONS))
     else:
-        h = Header.expected()
+        h = Header(*HEADER_REF)
     with open("polygons.dat", "wb") as f:
         h.write(f)
         for polygon in POLYGONS:
@@ -109,5 +106,5 @@ if __name__ == "__main__":
         write_polygons()
     with open("polygons.dat", "rb") as f:
         h, polygons = read_polygons(f)
-        assert h == Header.expected()
+        assert h == Header(*HEADER_REF)
         assert POLYGONS == polygons
