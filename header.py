@@ -74,7 +74,7 @@ class Header(SchemaInit, StarIter):
         return cls(*_I4DI.unpack(f.read(_I4DI.size)))
 
     @classmethod
-    def from_default(cls) -> Self:
+    def expected(cls) -> Self:
         return cls(0x1234, 0.5, 0.5, 7.0, 9.2, 3)
 
     def write(self, f: BinaryIO) -> None:
@@ -113,5 +113,5 @@ if __name__ == "__main__":
     #     write_polygons()
     with open("polygons.dat", "rb") as f:
         h, polygons = read_polygons(f)
-        assert h == Header.from_default()
+        assert h == Header.expected()
         assert POLYGONS == polygons
