@@ -2,7 +2,16 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 import os
-from typing import Iterable, BinaryIO, Self, TYPE_CHECKING
+from typing import (
+    Iterable,
+    Iterator,
+    BinaryIO,
+    Self,
+    TYPE_CHECKING,
+    ClassVar,
+    Any,
+    cast,
+)
 from itertools import chain
 import struct
 
@@ -20,16 +29,18 @@ _DD = struct.Struct("<dd")
 HEADER_REF = (0x1234, 0.5, 0.5, 7.0, 9.2, 3)
 
 
-class StarIter:
-    def __iter__(self):
-        for k, v in self.__dict__.items():
-            if isinstance(v, Iterable):
-                yield from v
-            else:
-                yield v
+# class StarIter:
+#     def __iter__(self) -> Iterator[Any]:
+#         for k, v in self.__dict__.items():
+#             if isinstance(v, Iterable):
+#                 yield from v
+#             else:
+#                 yield v
 
 
 class SchemaInit:
+    __schema__: ClassVar[tuple[str, ...]]
+
     def __init__(self, *args):
         t = list(args)
         for a in self.__schema__:
@@ -37,11 +48,18 @@ class SchemaInit:
         if t:
             raise TypeError(f"{args}: extra args")
 
+    def __iter__(self) -> Iterator[Any]:
+        for k, v in self.__dict__.items():
+            if isinstance(v, Iterable):
+                yield from v
+            else:
+                yield v
+
     def __repr__(self):
         args = ", ".join(f"{getattr(self, a)}" for a in self.__schema__)
         return f"{type(self).__name__}({args})"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (
             all((left == right) for left, right in zip(self, other))
             if isinstance(other, type(self))
@@ -49,11 +67,15 @@ class SchemaInit:
         )
 
 
-class Point(SchemaInit, StarIter):
+class Point(SchemaInit):
+    x: ClassVar[float]
+    y: ClassVar[float]
     __schema__ = ("x", "y")
 
 
-class Bbox(SchemaInit, StarIter):
+class Bbox(SchemaInit):
+    p1: ClassVar[Point]
+    p2: ClassVar[Point]
     __schema__ = ("p1", "p2")
 
 
@@ -63,7 +85,8 @@ def get_bbox(poly: PolygonsType = POLYGONS) -> Bbox:
     return Bbox(p1, p2)
 
 
-class Header(SchemaInit, StarIter):
+class Header(SchemaInit):
+    count: ClassVar[int]
     __schema__ = ("magic", "x1", "y1", "x2", "y2", "count")
 
     @classmethod
