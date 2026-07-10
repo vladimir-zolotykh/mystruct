@@ -57,12 +57,8 @@ class Bbox(SchemaInit, StarIter):
 
 
 def get_bbox(poly: PolygonsType = POLYGONS) -> Bbox:
-    p1 = Point()
-    p1.x = min(x for x, _ in chain(*poly))
-    p1.y = min(y for _, y in chain(*poly))
-    p2 = Point()
-    p2.x = max(x for x, _ in chain(*poly))
-    p2.y = max(y for _, y in chain(*poly))
+    p1 = Point(min(x for x, _ in chain(*poly)), min(y for _, y in chain(*poly)))
+    p2 = Point(max(x for x, _ in chain(*poly)), max(y for _, y in chain(*poly)))
     return Bbox(p1, p2)
 
 
@@ -86,7 +82,7 @@ def write_polygons() -> None:
     if TYPE_CHECKING:
         h = Header(0x1234, bb.p1.x, bb.p1.y, bb.p2.x, bb.p2.y, len(POLYGONS))
     else:
-        h = Header()
+        h = Header.expected()
     with open("polygons.dat", "wb") as f:
         h.write(f)
         for polygon in POLYGONS:
@@ -109,8 +105,8 @@ def read_polygons(f: BinaryIO) -> tuple[Header, PolygonsType]:
 
 
 if __name__ == "__main__":
-    # if not os.path.exists("polygons.dat"):
-    #     write_polygons()
+    if not os.path.exists("polygons.dat"):
+        write_polygons()
     with open("polygons.dat", "rb") as f:
         h, polygons = read_polygons(f)
         assert h == Header.expected()
